@@ -4,7 +4,9 @@ go 1.25.3
 
 require (
 	fyne.io/fyne/v2 v2.7.1
+	github.com/civilware/Gnomon v0.0.0-20240403103529-8b2fdb2b3106
 	github.com/civilware/tela v0.0.0-20250806221602-aa892d2ff8d4
+	github.com/gorilla/websocket v1.5.0
 )
 
 require (
@@ -13,7 +15,6 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/caarlos0/env/v6 v6.10.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
-	github.com/civilware/Gnomon v0.0.0-20240403103529-8b2fdb2b3106 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/creachadair/jrpc2 v0.35.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -34,7 +35,6 @@ require (
 	github.com/go-text/render v0.2.0 // indirect
 	github.com/go-text/typesetting v0.2.1 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hack-pad/go-indexeddb v0.3.2 // indirect
 	github.com/hack-pad/safejs v0.1.0 // indirect
 	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade // indirect
@@ -48,6 +48,7 @@ require (
 	github.com/rymdport/portal v0.4.2 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/stretchr/testify v1.11.1 // indirect

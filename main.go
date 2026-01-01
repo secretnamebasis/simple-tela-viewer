@@ -2,9 +2,15 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -13,11 +19,148 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
+	"github.com/civilware/Gnomon/structures"
 	"github.com/civilware/tela"
+	"github.com/gorilla/websocket"
 )
 
-func main() {
+var conn *websocket.Conn
+var ws = "127.0.0.1:9190"
 
+func set_gnomon_conn() error {
+
+	url := "ws://" + ws + "/ws"
+	dialer := websocket.Dialer{TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: true, // allow self-signed certs
+	}}
+	var err error
+	conn, _, err = dialer.Dial(url, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type getAllSCIDsByClassParams struct {
+	Class string `json:"class"`
+}
+type getAllSCIDsByClassResult struct {
+	Result []any `json:"result"`
+}
+
+func getAllSCIDsByClass(params getAllSCIDsByClassParams) (getAllSCIDsByClassResult, error) {
+
+	msg := map[string]any{
+		"method": "GetAllSCIDsByClass",
+		"id":     "1",
+		"params": params,
+	}
+	b, err := json.Marshal(msg)
+	if err != nil {
+		return getAllSCIDsByClassResult{}, errors.New("failed to marshal")
+	}
+	var r structures.JSONRpcResp
+	if err := json.Unmarshal(postBytes(b), &r); err != nil {
+		return getAllSCIDsByClassResult{}, errors.New("failed to unmarshal")
+	}
+
+	return getAllSCIDsByClassResult{r.Result.([]any)}, nil
+}
+
+type getAllClassesResult struct {
+	Result []any `json:"result"`
+}
+
+func getAllClasses() (getAllClassesResult, error) {
+
+	msg := map[string]any{
+		"method": "GetAllClasses",
+		"id":     "1",
+	}
+	b, err := json.Marshal(msg)
+	if err != nil {
+		return getAllClassesResult{}, errors.New("failed to marshal")
+	}
+	var r structures.JSONRpcResp
+	if err := json.Unmarshal(postBytes(b), &r); err != nil {
+		return getAllClassesResult{}, errors.New("failed to unmarshal")
+	}
+
+	return getAllClassesResult{r.Result.([]any)}, nil
+}
+
+type getAllSCIDsAndHeadersResult struct {
+	Result map[string]any `json:"result"`
+}
+
+func getAllSCIDsAndHeaders() (getAllSCIDsAndHeadersResult, error) {
+
+	msg := map[string]any{
+		"method": "GetAllSCIDsAndHeaders",
+		"id":     "1",
+	}
+	b, err := json.Marshal(msg)
+	if err != nil {
+		return getAllSCIDsAndHeadersResult{}, errors.New("failed to marshal")
+	}
+	var r structures.JSONRpcResp
+	if err := json.Unmarshal(postBytes(b), &r); err != nil {
+		return getAllSCIDsAndHeadersResult{}, errors.New("failed to unmarshal")
+	}
+
+	return getAllSCIDsAndHeadersResult{r.Result.(map[string]any)}, nil
+}
+func postBytes(b []byte) []byte {
+
+	err := conn.WriteMessage(websocket.TextMessage, b)
+	if err != nil {
+		panic(err)
+	}
+
+	_, msg, err := conn.ReadMessage()
+	if err != nil {
+		panic(err)
+	}
+	return msg
+}
+
+func main() {
+	for _, each := range os.Args {
+		if strings.Contains(each, "--ws-address") {
+			ws = strings.Split(each, "=")[1]
+		}
+	}
+	if err := set_gnomon_conn(); err != nil {
+		log.Fatal(err)
+	}
+	r, err := getAllSCIDsAndHeaders()
+	if err != nil {
+		log.Fatal(err)
+	}
+	scids_and_headers := r.Result
+	// for scid, header := range scids_and_headers {
+	// 	fmt.Println(scid, header.(string))
+	// }
+	allClasses, err := getAllClasses()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(allClasses.Result...)
+	re, err := getAllSCIDsByClass(getAllSCIDsByClassParams{Class: "TELA-INDEX-1"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(re.Result)
+	collection := map[string]string{}
+	for _, each := range re.Result {
+		// fmt.Println(each)
+		header, ok := scids_and_headers[each.(string)]
+		if !ok {
+			continue
+		}
+		collection[each.(string)] = header.(string)
+	}
 	// make a simple app in fyne with some random id
 	myApp := app.NewWithID(rand.Text())
 
@@ -33,8 +176,18 @@ func main() {
 	entry_endpoint.SetPlaceHolder("127.0.0.1:10102")
 
 	// make a way to submit a scid to serve
+	search := widget.NewEntry()
+	search.SetPlaceHolder("search")
 	entry_scid := widget.NewEntry()
 	entry_scid.SetPlaceHolder("scid")
+	search.OnChanged = func(s string) {
+		for scid, each := range collection {
+			if strings.Contains(each, s) {
+				fmt.Println(scid, each)
+				entry_scid.SetText(scid)
+			}
+		}
+	}
 
 	// load them into a form for processing
 	submit := widget.NewForm(
@@ -51,8 +204,14 @@ func main() {
 		// get the scid
 		scid := entry_scid.Text
 
+		// clean up
+		scid = strings.TrimSpace(scid)
+
 		// get the endpoint
 		endpoint := entry_endpoint.Text
+
+		// clean up
+		endpoint = strings.TrimSpace(endpoint)
 
 		// allow for updates, else a panic can occur
 		tela.AllowUpdates(true)
@@ -74,6 +233,7 @@ func main() {
 	content := container.NewVBox(
 		layout.NewSpacer(),
 		submit,
+		search,
 		layout.NewSpacer(),
 	)
 
