@@ -52,9 +52,10 @@ type getAllSCIDsByClassResult struct {
 func getAllSCIDsByClass(params getAllSCIDsByClassParams) (getAllSCIDsByClassResult, error) {
 
 	msg := map[string]any{
-		"method": "GetAllSCIDsByClass",
-		"id":     "1",
-		"params": params,
+		"jsonrpc": "2.0",
+		"method":  "GetAllSCIDsByClass",
+		"id":      "1",
+		"params":  params,
 	}
 	b, err := json.Marshal(msg)
 	if err != nil {
@@ -75,8 +76,9 @@ type getAllClassesResult struct {
 func getAllClasses() (getAllClassesResult, error) {
 
 	msg := map[string]any{
-		"method": "GetAllClasses",
-		"id":     "1",
+		"jsonrpc": "2.0",
+		"method":  "GetAllClasses",
+		"id":      "1",
 	}
 	b, err := json.Marshal(msg)
 	if err != nil {
@@ -97,8 +99,9 @@ type getAllSCIDsAndHeadersResult struct {
 func getAllSCIDsAndHeaders() (getAllSCIDsAndHeadersResult, error) {
 
 	msg := map[string]any{
-		"method": "GetAllSCIDsAndHeaders",
-		"id":     "1",
+		"jsonrpc": "2.0",
+		"method":  "GetAllSCIDsAndHeaders",
+		"id":      "1",
 	}
 	b, err := json.Marshal(msg)
 	if err != nil {
@@ -112,7 +115,7 @@ func getAllSCIDsAndHeaders() (getAllSCIDsAndHeadersResult, error) {
 	return getAllSCIDsAndHeadersResult{r.Result.(map[string]any)}, nil
 }
 func postBytes(b []byte) []byte {
-
+	// fmt.Println(string(b))
 	err := conn.WriteMessage(websocket.TextMessage, b)
 	if err != nil {
 		panic(err)
@@ -122,6 +125,7 @@ func postBytes(b []byte) []byte {
 	if err != nil {
 		panic(err)
 	}
+	// fmt.Println(string(msg))
 	return msg
 }
 
