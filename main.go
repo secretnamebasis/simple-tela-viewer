@@ -130,41 +130,43 @@ func postBytes(b []byte) []byte {
 }
 
 func main() {
+	collection := map[string]string{}
+
 	for _, each := range os.Args {
 		if strings.Contains(each, "--ws-address") {
 			ws = strings.Split(each, "=")[1]
+			if err := set_gnomon_conn(); err != nil {
+				log.Fatal(err)
+			}
+			r, err := getAllSCIDsAndHeaders()
+			if err != nil {
+				log.Fatal(err)
+			}
+			scids_and_headers := r.Result
+			// for scid, header := range scids_and_headers {
+			// 	fmt.Println(scid, header.(string))
+			// }
+			allClasses, err := getAllClasses()
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(allClasses.Result...)
+			re, err := getAllSCIDsByClass(getAllSCIDsByClassParams{Class: "TELA-INDEX-1"})
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(re.Result)
+			for _, each := range re.Result {
+				// fmt.Println(each)
+				header, ok := scids_and_headers[each.(string)]
+				if !ok {
+					continue
+				}
+				collection[each.(string)] = header.(string)
+			}
 		}
 	}
-	if err := set_gnomon_conn(); err != nil {
-		log.Fatal(err)
-	}
-	r, err := getAllSCIDsAndHeaders()
-	if err != nil {
-		log.Fatal(err)
-	}
-	scids_and_headers := r.Result
-	// for scid, header := range scids_and_headers {
-	// 	fmt.Println(scid, header.(string))
-	// }
-	allClasses, err := getAllClasses()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(allClasses.Result...)
-	re, err := getAllSCIDsByClass(getAllSCIDsByClassParams{Class: "TELA-INDEX-1"})
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(re.Result)
-	collection := map[string]string{}
-	for _, each := range re.Result {
-		// fmt.Println(each)
-		header, ok := scids_and_headers[each.(string)]
-		if !ok {
-			continue
-		}
-		collection[each.(string)] = header.(string)
-	}
+
 	// make a simple app in fyne with some random id
 	myApp := app.NewWithID(rand.Text())
 
